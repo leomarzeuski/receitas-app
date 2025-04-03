@@ -26,6 +26,6 @@ jobs:
 
       - name: 🚀 Publish update to Expo
         run: |
-          eas update --branch production --message "CI: update from main"
+          eas update --branch main --channel main --message "CI: update from main"
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
