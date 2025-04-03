@@ -36,6 +36,21 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "7b099633-42e3-45a1-9077-d28b77b7d987"
+      }
+    },
+    "owner": "leomarzeuski",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/7b099633-42e3-45a1-9077-d28b77b7d987"
     }
   }
 }
