@@ -29,7 +29,13 @@ export default function RecipeFormScreen() {
   const isEditing = !!recipeId;
 
   const [title, setTitle] = useState<string>("");
-  const [ingredients, setIngredients] = useState<string[]>([""]);
+  const [ingredients, setIngredients] = useState<
+    Array<{
+      quantity: string;
+      unit: string;
+      name: string;
+    }>
+  >([{ quantity: "", unit: "", name: "" }]);
   const [instructions, setInstructions] = useState<string>("");
   const [preparationTime, setPreparationTime] = useState<string>("");
   const [servings, setServings] = useState<string>("");
@@ -37,6 +43,7 @@ export default function RecipeFormScreen() {
   const [image, setImage] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [saving, setSaving] = useState<boolean>(false);
+  const [scrollEnabled, setScrollEnabled] = useState<boolean>(true);
 
   const categories: string[] = [
     "Café da Manhã",
@@ -61,8 +68,26 @@ export default function RecipeFormScreen() {
     try {
       const recipe = await getRecipeById(recipeId);
       if (recipe) {
+        const parsedIngredients = recipe.ingredients.map((ingredientStr) => {
+          const parts = ingredientStr.trim().split(/\s+/);
+          if (parts.length === 1) {
+            return { quantity: "", unit: "", name: parts[0] };
+          }
+          if (parts.length === 2) {
+            if (/^\d+(\.\d+)?$/.test(parts[0])) {
+              return { quantity: parts[0], unit: "", name: parts[1] };
+            } else {
+              return { quantity: "", unit: parts[0], name: parts[1] };
+            }
+          }
+          return {
+            quantity: parts[0],
+            unit: parts[1],
+            name: parts.slice(2).join(" "),
+          };
+        });
         setTitle(recipe.title);
-        setIngredients(recipe.ingredients);
+        setIngredients(parsedIngredients);
         setInstructions(recipe.instructions);
         setPreparationTime(recipe.preparationTime.toString());
         setServings(recipe.servings.toString());
@@ -109,7 +134,7 @@ export default function RecipeFormScreen() {
   };
 
   const addIngredient = () => {
-    setIngredients([...ingredients, ""]);
+    setIngredients([...ingredients, { quantity: "", unit: "", name: "" }]);
   };
 
   const removeIngredient = (index: number) => {
@@ -120,9 +145,16 @@ export default function RecipeFormScreen() {
     }
   };
 
-  const updateIngredient = (text: string, index: number) => {
+  const updateIngredient = (
+    index: number,
+    field: "quantity" | "unit" | "name",
+    value: string
+  ) => {
     const newIngredients = [...ingredients];
-    newIngredients[index] = text;
+    newIngredients[index] = {
+      ...newIngredients[index],
+      [field]: value,
+    };
     setIngredients(newIngredients);
   };
 
@@ -132,7 +164,7 @@ export default function RecipeFormScreen() {
       return false;
     }
 
-    if (ingredients.filter((i) => i.trim()).length === 0) {
+    if (ingredients.filter((i) => i.name.trim()).length === 0) {
       Alert.alert("Erro", "Por favor, adicione pelo menos um ingrediente.");
       return false;
     }
@@ -164,12 +196,20 @@ export default function RecipeFormScreen() {
 
     setSaving(true);
     try {
-      const filteredIngredients = ingredients.filter((i) => i.trim());
+      const validIngredients = ingredients
+        .filter((i) => i.name.trim())
+        .map((i) => {
+          let ingredientText = "";
+          if (i.quantity) ingredientText += `${i.quantity} `;
+          if (i.unit) ingredientText += `${i.unit} `;
+          ingredientText += i.name.trim();
+          return ingredientText;
+        });
 
       const recipeData = new Recipe(
         isEditing ? recipeId : null,
         title,
-        filteredIngredients,
+        validIngredients,
         instructions,
         Number(preparationTime),
         Number(servings),
@@ -208,7 +248,7 @@ export default function RecipeFormScreen() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       keyboardVerticalOffset={100}
     >
-      <ScrollView>
+      <ScrollView scrollEnabled={scrollEnabled}>
         <TouchableOpacity style={styles.imageContainer} onPress={selectImage}>
           {image ? (
             <Image source={{ uri: image }} style={styles.image} />
@@ -234,11 +274,20 @@ export default function RecipeFormScreen() {
 
           <View style={styles.field}>
             <Text style={styles.label}>Categoria *</Text>
-            <View style={styles.pickerContainer}>
+            <View
+              style={styles.pickerContainer}
+              onTouchStart={() => setScrollEnabled(false)}
+              onTouchEnd={() => setScrollEnabled(true)}
+            >
               <Picker
                 selectedValue={category}
                 onValueChange={(value) => setCategory(value)}
-                style={styles.picker}
+                style={
+                  Platform.OS === "ios"
+                    ? styles.pickerIOS
+                    : styles.pickerAndroid
+                }
+                itemStyle={styles.pickerItem}
               >
                 {categories.map((cat) => (
                   <Picker.Item key={cat} label={cat} value={cat} />
@@ -275,25 +324,57 @@ export default function RecipeFormScreen() {
 
           <View style={styles.field}>
             <Text style={styles.label}>Ingredientes *</Text>
+            <Text style={styles.sublabel}>
+              Adicione quantidade, unidade de medida e ingrediente
+            </Text>
+
             {ingredients.map((ingredient, index) => (
-              <View key={index} style={styles.ingredientRow}>
-                <TextInput
-                  style={[styles.input, { flex: 1 }]}
-                  value={ingredient}
-                  onChangeText={(text) => updateIngredient(text, index)}
-                  placeholder={`Ingrediente ${index + 1}`}
-                />
-                <TouchableOpacity
-                  style={styles.removeButton}
-                  onPress={() => removeIngredient(index)}
-                  disabled={ingredients.length === 1}
-                >
-                  <Ionicons
-                    name="trash-outline"
-                    size={22}
-                    color={ingredients.length === 1 ? "#ccc" : "#ff6b6b"}
+              <View key={index} style={styles.ingredientContainer}>
+                <View style={styles.ingredientRow}>
+                  {/* Campo de quantidade */}
+                  <TextInput
+                    style={[styles.input, styles.quantityInput]}
+                    value={ingredient.quantity}
+                    onChangeText={(text) =>
+                      updateIngredient(index, "quantity", text)
+                    }
+                    placeholder="Qtd"
+                    keyboardType="numeric"
                   />
-                </TouchableOpacity>
+
+                  {/* Campo de unidade */}
+                  <TextInput
+                    style={[styles.input, styles.unitInput]}
+                    value={ingredient.unit}
+                    onChangeText={(text) =>
+                      updateIngredient(index, "unit", text)
+                    }
+                    placeholder="Un."
+                  />
+
+                  {/* Campo de nome do ingrediente */}
+                  <TextInput
+                    style={[styles.input, styles.nameInput]}
+                    value={ingredient.name}
+                    onChangeText={(text) =>
+                      updateIngredient(index, "name", text)
+                    }
+                    placeholder="Ingrediente"
+                  />
+
+                  {/* Botão de remover */}
+                  <TouchableOpacity
+                    style={styles.removeButton}
+                    onPress={() => removeIngredient(index)}
+                    disabled={ingredients.length === 1}
+                  >
+                    <Ionicons
+                      name="trash-outline"
+                      size={22}
+                      color={ingredients.length === 1 ? "#ccc" : "#ff6b6b"}
+                    />
+                  </TouchableOpacity>
+                </View>
               </View>
             ))}
             <TouchableOpacity style={styles.addButton} onPress={addIngredient}>
@@ -406,15 +487,47 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#ddd",
     borderRadius: 5,
-    overflow: "hidden",
+    overflow: Platform.OS === "android" ? "hidden" : "visible",
   },
-  picker: {
+  pickerAndroid: {
     height: 50,
+    width: "100%",
+    color: "#333",
+  },
+  pickerIOS: {
+    height: 120,
+    width: "100%",
+    color: "#333",
+  },
+  pickerItem: {
+    fontSize: 16,
+    height: 120,
+    color: "#333",
+  },
+  sublabel: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 10,
+  },
+  ingredientContainer: {
+    marginBottom: 10,
   },
   ingredientRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 10,
+  },
+  quantityInput: {
+    flex: 1,
+    marginRight: 8,
+    maxWidth: 60,
+  },
+  unitInput: {
+    flex: 1,
+    marginRight: 8,
+    maxWidth: 60,
+  },
+  nameInput: {
+    flex: 3,
   },
   removeButton: {
     padding: 8,
