@@ -1,4 +1,3 @@
-// models/Recipe.ts
 export default class Recipe {
   id: number | null;
   title: string;
@@ -11,13 +10,13 @@ export default class Recipe {
   createdAt: Date;
 
   constructor(
-    id: number | null, 
-    title: string, 
-    ingredients: string[], 
-    instructions: string, 
-    preparationTime: number, 
-    servings: number, 
-    category: string, 
+    id: number | null,
+    title: string,
+    ingredients: string[],
+    instructions: string,
+    preparationTime: number,
+    servings: number,
+    category: string,
     image: string | null = null
   ) {
     this.id = id;

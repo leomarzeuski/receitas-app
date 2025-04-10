@@ -1,23 +1,35 @@
 // app/index.tsx
-import React, { useState, useEffect } from 'react';
-import { 
-  View, Text, FlatList, StyleSheet, TouchableOpacity, 
-  Image, TextInput, ActivityIndicator 
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { getRecipes, searchRecipes } from '../services/DatabaseService';
-import Recipe from '../models/Recipe';
-import { router } from 'expo-router';
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  FlatList,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  TextInput,
+  ActivityIndicator,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { getRecipes, searchRecipes } from "../services/DatabaseService";
+import Recipe from "../models/Recipe";
+import { router } from "expo-router";
 
 export default function RecipeListScreen() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
-  const [filter, setFilter] = useState<string>('');
+  const [filter, setFilter] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
   const [currentCategory, setCurrentCategory] = useState<string | null>(null);
-  
+
   const categories: string[] = [
-    'Todas', 'Café da Manhã', 'Almoço', 'Jantar', 
-    'Sobremesa', 'Lanche', 'Vegetariano', 'Fitness'
+    "Todas",
+    "Café da Manhã",
+    "Almoço",
+    "Jantar",
+    "Sobremesa",
+    "Lanche",
+    "Vegetariano",
+    "Fitness",
   ];
 
   useEffect(() => {
@@ -27,12 +39,17 @@ export default function RecipeListScreen() {
   const loadRecipes = async () => {
     setLoading(true);
     try {
-      const category = currentCategory !== 'Todas' ? currentCategory : null;
+      const category = currentCategory !== "Todas" ? currentCategory : null;
       const data = await getRecipes(category);
       setRecipes(data);
-    } catch (error) {
-      console.error('Error loading recipes:', error);
-      alert('Não foi possível carregar as receitas');
+    } catch (error: any) {
+      console.error("Error loading recipes:", error);
+      if (
+        !error?.message?.includes("no such table") &&
+        !error?.message?.includes("undefined")
+      ) {
+        alert("Não foi possível carregar as receitas");
+      }
     } finally {
       setLoading(false);
     }
@@ -43,14 +60,14 @@ export default function RecipeListScreen() {
       loadRecipes();
       return;
     }
-    
+
     setLoading(true);
     try {
       const results = await searchRecipes(filter);
       setRecipes(results);
     } catch (error) {
-      console.error('Error searching recipes:', error);
-      alert('Não foi possível realizar a busca');
+      console.error("Error searching recipes:", error);
+      alert("Não foi possível realizar a busca");
     } finally {
       setLoading(false);
     }
@@ -61,7 +78,7 @@ export default function RecipeListScreen() {
   };
 
   const renderRecipeItem = ({ item }: { item: Recipe }) => (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={styles.recipeCard}
       onPress={() => openRecipeDetails(item.id as number)}
     >
@@ -77,7 +94,8 @@ export default function RecipeListScreen() {
         <View style={styles.recipeMetaInfo}>
           <Text style={styles.recipeCategory}>{item.category}</Text>
           <Text style={styles.recipeTime}>
-            <Ionicons name="time-outline" size={14} /> {item.preparationTime} min
+            <Ionicons name="time-outline" size={14} /> {item.preparationTime}{" "}
+            min
           </Text>
         </View>
       </View>
@@ -95,7 +113,10 @@ export default function RecipeListScreen() {
             onChangeText={setFilter}
             onSubmitEditing={searchForRecipes}
           />
-          <TouchableOpacity style={styles.searchButton} onPress={searchForRecipes}>
+          <TouchableOpacity
+            style={styles.searchButton}
+            onPress={searchForRecipes}
+          >
             <Ionicons name="search" size={24} color="#fff" />
           </TouchableOpacity>
         </View>
@@ -111,14 +132,14 @@ export default function RecipeListScreen() {
             <TouchableOpacity
               style={[
                 styles.categoryButton,
-                currentCategory === item && styles.categoryActive
+                currentCategory === item && styles.categoryActive,
               ]}
-              onPress={() => setCurrentCategory(item === 'Todas' ? null : item)}
+              onPress={() => setCurrentCategory(item === "Todas" ? null : item)}
             >
-              <Text 
+              <Text
                 style={[
                   styles.categoryText,
-                  currentCategory === item && styles.categoryTextActive
+                  currentCategory === item && styles.categoryTextActive,
                 ]}
               >
                 {item}
@@ -133,7 +154,9 @@ export default function RecipeListScreen() {
       ) : (
         <FlatList
           data={recipes}
-          keyExtractor={(item) => item.id?.toString() || Math.random().toString()}
+          keyExtractor={(item) =>
+            item.id?.toString() || Math.random().toString()
+          }
           renderItem={renderRecipeItem}
           contentContainerStyle={styles.listContainer}
           ListEmptyComponent={
@@ -148,9 +171,9 @@ export default function RecipeListScreen() {
         />
       )}
 
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.fab}
-        onPress={() => router.push('/recipe/add')}
+        onPress={() => router.push("/recipe/add")}
       >
         <Ionicons name="add" size={24} color="#fff" />
       </TouchableOpacity>
@@ -161,69 +184,69 @@ export default function RecipeListScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f8f8',
+    backgroundColor: "#f8f8f8",
   },
   header: {
     padding: 15,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: "#eee",
   },
   searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   searchInput: {
     flex: 1,
     height: 46,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: "#f0f0f0",
     borderRadius: 23,
     paddingHorizontal: 15,
     fontSize: 16,
   },
   searchButton: {
-    backgroundColor: '#ff6b6b',
+    backgroundColor: "#ff6b6b",
     width: 46,
     height: 46,
     borderRadius: 23,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginLeft: 10,
   },
   categoriesContainer: {
     paddingVertical: 12,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: "#eee",
   },
   categoryButton: {
     paddingHorizontal: 16,
     paddingVertical: 8,
     marginHorizontal: 6,
     borderRadius: 20,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: "#f0f0f0",
   },
   categoryActive: {
-    backgroundColor: '#ff6b6b',
+    backgroundColor: "#ff6b6b",
   },
   categoryText: {
-    fontWeight: '500',
-    color: '#555',
+    fontWeight: "500",
+    color: "#555",
   },
   categoryTextActive: {
-    color: '#fff',
+    color: "#fff",
   },
   listContainer: {
     padding: 15,
   },
   recipeCard: {
-    flexDirection: 'row',
-    backgroundColor: '#fff',
+    flexDirection: "row",
+    backgroundColor: "#fff",
     borderRadius: 10,
-    overflow: 'hidden',
+    overflow: "hidden",
     marginBottom: 15,
     elevation: 2,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
@@ -233,67 +256,67 @@ const styles = StyleSheet.create({
     height: 100,
   },
   recipeImagePlaceholder: {
-    backgroundColor: '#f0f0f0',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#f0f0f0",
+    justifyContent: "center",
+    alignItems: "center",
   },
   recipeInfo: {
     flex: 1,
     padding: 12,
-    justifyContent: 'space-between',
+    justifyContent: "space-between",
   },
   recipeTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 6,
   },
   recipeMetaInfo: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   recipeCategory: {
     fontSize: 12,
-    color: '#ff6b6b',
-    fontWeight: '500',
+    color: "#ff6b6b",
+    fontWeight: "500",
   },
   recipeTime: {
     fontSize: 12,
-    color: '#888',
+    color: "#888",
   },
   emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     padding: 30,
   },
   emptyText: {
     fontSize: 18,
-    color: '#888',
+    color: "#888",
     marginTop: 10,
   },
   emptySubText: {
     fontSize: 14,
-    color: '#aaa',
-    textAlign: 'center',
+    color: "#aaa",
+    textAlign: "center",
     marginTop: 5,
   },
   loader: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   fab: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 16,
     right: 16,
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#ff6b6b',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#ff6b6b",
+    justifyContent: "center",
+    alignItems: "center",
     elevation: 5,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
